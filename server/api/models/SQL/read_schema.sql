@@ -1,0 +1,1 @@
+SELECT * FROM information_schema."schemata" WHERE CAST("catalog_name" AS text) = 'ananas' AND CAST("schema_name" AS text) = 'ananas';

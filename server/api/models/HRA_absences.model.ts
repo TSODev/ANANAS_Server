@@ -1,0 +1,62 @@
+
+// "Matricule gestion",
+// "Code absence",
+// "Code langue",
+// "Date début absence",
+// "Date fin absence",
+// "Horodatage chrgmt",
+// "Identifiant",
+// "Ident situation",
+// "Id élém rémun",
+// "Libellé absence",
+// "Matricule gestion_1",
+// "Modèle rép absence",
+// "Numéro de bulletin",
+// "Numéro traitement",
+// "Partition Réglem.",
+// "Position sur le bu",
+// "Période de paie",
+// "Réglementation",
+// "Répertoire absence",
+// "Source absence",
+// "Usage de paie",
+// "Centre de coût",
+// "Matricule GP",
+// "Nom usuel GP",
+// "Prénom GP"
+
+export interface IHRA_Absence {
+    absence_id: number,
+    people_id: number,
+    load_id: number
+    code: string,
+    libelle: string,
+    debut: Date,
+    fin: Date,
+    identifiant: string,
+    modele_rep_absence: string,
+    num_bulletin: string,
+    num_traitement: string,
+    partition_reglem: string,
+    position_bu: string,
+    periode_paie: string,
+    reglementation: string,
+    repertoire_absence: string,
+    source_absence: string,
+    usage_paie: string,
+    centre_cout: string,
+    matricule_GP: string,
+    hasanomalie: boolean,
+    createdDate: Date
+}
+
+export interface IHRA_Absence_View {
+    code: string,
+    libelle: string,
+    debut: Date,
+    fin: Date,
+    hasanomalie: boolean,
+    fullname: string,
+    tgi: string
+    matricule: string,
+}

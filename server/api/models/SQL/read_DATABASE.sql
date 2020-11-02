@@ -1,0 +1,1 @@
+SELECT * FROM "pg_database" WHERE CAST("datname" AS text) = 'ananas'
