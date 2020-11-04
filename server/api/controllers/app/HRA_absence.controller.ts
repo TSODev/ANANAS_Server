@@ -23,7 +23,6 @@ export class absenceController {
     createAbsence(req: Request, res: Response): void {
         if (!db.dbConnected) res.sendStatus(500);
         const data = req.body;
-        l.debug('[HRAABSENCESCONTROLLER] - Absences : ', data);
         const errors = validateAbsenceInfo(data);
         //    const errors = validatePassword(credentials.password);
         //    const errors = '';
@@ -42,8 +41,6 @@ export class absenceController {
         const name = bulk.name;
         const cols = bulk.cols;
         const rows = bulk.rows;
-
-        l.debug('[HRAABSENCESCONTROLLER] - Bulk Create HRAAbsences : ', bulk.name, bulk.cols);
 
         dbDataFiles.getAll()
             .then(datafile => {
@@ -93,7 +90,6 @@ export class absenceController {
 
     async getAbsence(req: Request, res: Response) {
         if (!db.dbConnected) res.sendStatus(500);
-        l.debug("[HRAABSENCECONTROLLER] - looking for current absence (id): ", req["absenceId"]);
         const absence = await dbHRA_Absence.findAbsenceById(req["absenceId"]);
 
         if (absence) {
@@ -104,8 +100,6 @@ export class absenceController {
     }
 
     async getAbsenceView(req: Request, res: Response) {
-
-        l.debug("[HRAABSENCECONTROLLER] - Absences View: ");
         dbHRA_Absence.listAbsencesView()
             .then(absences => res.status(200).json(absences))
             .catch(err => res.status(400).send(err.message))
@@ -114,7 +108,6 @@ export class absenceController {
     async getAbsenceById(req: Request, res: Response) {
         //        if (!db.dbConnected) res.sendStatus(500);
         const id = req.params['id'];
-        l.debug("[HRAABSENCECONTROLLER] - looking for absenceId: ", id);
         const absence = await dbHRA_Absence.findAbsenceById(id);
         if (absence) {
             res.status(200).json({ absence: absence });
@@ -126,14 +119,12 @@ export class absenceController {
 
     async deleteAbsence(req: Request, res: Response) {
         //
-        l.debug('[HRAABSENCECONTROLLER] - Request for delete absenceId:', req.params.id);
         const user = await dbHRA_Absence.deleteAbsence(req.params.id)
             .catch(err => res.sendStatus(500));
         res.sendStatus(201);
     }
 
     async deleteAbsencesByLoad(req: Request, res: Response) {
-        l.debug('[HRAABSENCECONTROLLER] - Request for delete absences by Load Id:', req.params.id);
         try {
             const nbRecords = dbHRA_Absence.deleteAllAbsenceByFileId(parseInt(req.params.id))
             res.status(200).send(nbRecords + ' deleted')

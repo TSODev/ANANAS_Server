@@ -35,10 +35,10 @@ class userService {
     async createUser(credentials, passwordDigest: string) {
         return new promise.Promise((resolve, reject) => {
             const findUser = new PQ({ text: 'SELECT user_id FROM Users WHERE email = $1', values: credentials.email });
-            l.debug('Query findUserByEmail :', findUser.text)
+            //            l.debug('Query findUserByEmail :', findUser.text)
             db.none(findUser)
                 .then(() => {
-                    l.debug('dbCreate User : no user found')
+                    //                    l.debug('dbCreate User : no user found')
                     // User does not exist so we can create a new one !
                     const query = new PQ(
                         {
@@ -77,7 +77,7 @@ class userService {
                 .then(version => {
                     const findUser = new PQ({ text: 'SELECT * FROM Users WHERE email = $1', values: email });
                     //            const query = 'SELECT * FROM users WHERE email = $1',
-                    l.debug('[findUserByEmail]', findUser.text)
+                    //                    l.debug('[findUserByEmail]', findUser.text)
                     db.one(findUser)
                         .then((user) => resolve(user))
                         .catch((err) => reject(err))
@@ -86,13 +86,6 @@ class userService {
                     l.error(err.message)
                     reject(err)
                 })
-            //     const findUser = new PQ({ text: 'SELECT * FROM Users WHERE email = $1', values: email });
-            //     //            const query = 'SELECT * FROM users WHERE email = $1',
-            //     l.debug('[findUserByEmail]', findUser.text)
-            //     db.one(findUser)
-            //         .then((user) => resolve(user))
-            //         .catch((err) => reject(err))
-            // })
         }
         )
     }
@@ -120,7 +113,7 @@ class userService {
 
     async deleteUser(id: string): Promise<IUser> {
         return new promise.Promise((resolve, reject) => {
-            l.debug('Deleting User :', id)
+            //            l.debug('Deleting User :', id)
             const deleteUser = new PQ({
                 text: 'DELETE FROM users WHERE user_id = $1',
                 values: id
@@ -143,19 +136,6 @@ class userService {
         })
     }
 
-    // async addUserInGroup(userId: string, groupId: string){
-    //     l.debug('Adding userId : ', userId, ' in groupId : ', groupId );
-    //     await User.findOne({user_id: userId}, (update) => {
-    //         update.groups.push(groupId);
-    //         return User.findOneAndUpdate({user_id: userId}, update);
-    //     })
-
-    // }
-
-    // async findUsersInGroup(groupId: string): Promise<IUser> {
-    //     l.debug('Getting Users in Group : ', groupId);
-    //     await User.find({user.groups})
-    // }
 
     uuidv4() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {

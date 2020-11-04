@@ -12,6 +12,7 @@ import { dbHRA_Absence } from './HRA_absence.service';
 import { dbLN_Absence } from './LN_absence.service';
 import { IHRA_Absence } from '../models/HRA_absences.model';
 import { ILN_Absence } from '../models/LN_absences.model';
+import P from 'pino';
 
 const { ParameterizedQuery: PQ } = require('pg-promise');
 var moment = require('moment')
@@ -25,7 +26,6 @@ const HRAmapping = [
     { in: 'RTTE', mapped: 'RTT' },
     { in: '.RTTE', mapped: 'RTA' },
     { in: 'RTTE', mapped: 'RTA' },
-    // TODO--- Ajoutés et a vérifier !----
     { in: 'CHO', mapped: 'APN' },
     { in: '.CP', mapped: 'CAN' },
     { in: '.CPANC', mapped: 'CAN' },
@@ -136,7 +136,7 @@ class AnomaliesService {
 
     async anomaliesBulkInsert(bulkArray: IAnomalie[]): Promise<IAnomalie[]> {
         return new promise.Promise((resolve, reject) => {
-            const cs = new pgp.helpers.ColumnSet(['people_id', 'anomalie_from', 'etat', 'hracode', 'lncode', 'libelle', 'debut', 'commentaire', 'createddate'], { table: 'anomalies' });
+            const cs = new pgp.helpers.ColumnSet(['people_id', 'anomalie_from', 'etat', 'hra_id', 'hracode', 'ln_id', 'lncode', 'libelle', 'debut', 'commentaire', 'createddate'], { table: 'anomalies' });
 
             const Query = pgp.helpers.insert(bulkArray, cs) + ' RETURNING *'
 
@@ -164,6 +164,8 @@ class AnomaliesService {
                 const ln = LN_abs.filter(ln => moment(ln.debut).isSame(moment(date), 'day'))
                 if (ln.length > 0) {
                     const lncode = ln[0].code
+                    const lnid = ln[0].absence_id
+                    //                    l.debug('FROM HRA hra_id', hra.absence_id, "ln_id", lnid)
                     //            if (day !== 0 && day !== 6 && JF.some(ferie => date === ferie)) {                           // Does not check on Week End
                     if (day !== 0 && day !== 6) {                           // Does not check on Week End
                         const HRAmap = AllHRAmaps(hra.code)
@@ -175,7 +177,9 @@ class AnomaliesService {
                                 anomalie_from: 'HRA',
                                 people_id: hra.people_id,
                                 etat: 1,
+                                hra_id: hra.absence_id,
                                 hracode: hra.code,
+                                ln_id: lnid,
                                 lncode: lncode,
                                 libelle: 'HRA: ' + hra.code + ' ne correspond pas avec LN: ' + lncode,
                                 debut: moment(date).toDate(),
@@ -195,6 +199,8 @@ class AnomaliesService {
             const hra = HRA_abs.filter(hra => (moment(hra.debut).isSameOrBefore(moment(date), 'day') && moment(hra.fin).isSameOrAfter(moment(date), 'day')))
             if (hra.length > 0) {
                 const hracode = hra[0].code
+                const hraid = hra[0].absence_id
+                //                l.debug('FROM LN hra_id', hraid, "ln_id", ln.absence_id)
                 //            if (day !== 0 && day !== 6 && JF.some(ferie => date === ferie)) {                           // Does not check on Week End
                 if (day !== 0 && day !== 6) {                           // Does not check on Week End
                     const LNmap = AllLNmaps(ln.code)
@@ -206,7 +212,9 @@ class AnomaliesService {
                             anomalie_from: 'LN',
                             people_id: ln.people_id,
                             etat: 1,
+                            hra_id: hraid,
                             hracode: hracode,
+                            ln_id: ln.absence_id,
                             lncode: ln.code,
                             libelle: 'LN: ' + ln.code + ' ne correspond pas avec HRA: ' + hracode,
                             debut: moment(date).toDate(),
@@ -267,14 +275,19 @@ class AnomaliesService {
                     var nbPeople = people.length
                     var currentPeople = 0
                     people.forEach(p => {
-                        this.analyseForPeopleId(p.people_id)
-                            .then(anomalies => {
-                                AllAnomalies = AllAnomalies.concat(anomalies)
-                                currentPeople += 1
-                                if (currentPeople === nbPeople)
-                                    resolve(AllAnomalies)
-                            })
-                            .catch(err => reject(err))
+                        if (p.matricule !== 0) {
+                            this.analyseForPeopleId(p.people_id)
+                                .then(anomalies => {
+                                    //                                    l.debug('Analyse People :', currentPeople, '/', nbPeople, " ", p.people_id, p.matricule)
+
+                                    AllAnomalies = AllAnomalies.concat(anomalies)
+                                    currentPeople += 1
+                                    if (currentPeople === nbPeople)
+                                        resolve(AllAnomalies)
+                                })
+                                .catch(err => reject(err))
+                        } else currentPeople += 1
+
                     })
 
                 })

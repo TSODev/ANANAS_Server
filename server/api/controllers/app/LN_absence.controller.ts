@@ -22,15 +22,12 @@ var fr = moment().locale('fr');
 export class absenceController {
 
     async allAbsences(req: Request, res: Response) {
-        l.debug('[LNABSENCESCONTROLLER] - All Absences');
         dbLN_Absence.findAllAbsences()
             .then(absences => res.status(200).json({ LN_absences: absences }))
             .catch(err => res.status(400).send({ message: err.message }))
     }
 
     async getAbsenceView(req: Request, res: Response) {
-
-        l.debug("[LNABSENCECONTROLLER] - Absences View: ");
         dbLN_Absence.listAbsencesView()
             .then(absences => res.status(200).json(absences))
             .catch(err => res.status(400).send(err.message))
@@ -40,7 +37,6 @@ export class absenceController {
     createAbsence(req: Request, res: Response): void {
         // if (!db.dbConnected) res.sendStatus(500);
         const data = req.body;
-        l.debug('[LNABSENCESCONTROLLER] - Absences : ', data);
         const errors = validateAbsenceInfo(data);
         if (errors.length > 0) {
             res.status(400).send({ message: errors });
@@ -54,7 +50,6 @@ export class absenceController {
 
     getAbsencesForPeopleId(req: Request, res: Response) {
         const peopleId = req.query['id'].toString()
-        l.debug('[LNABSENCESCONTROLLER] - Get Absences for PeopleId : ', peopleId);
         dbLN_Absence.findAbsencesIdForPeopleId(parseInt(peopleId))
             .then(LNabsences => res.status(200).json({ LNabsences }))
             .catch(err => res.status(400).send({ message: err.message }))
@@ -63,7 +58,6 @@ export class absenceController {
 
     getAbsenceById(req: Request, res: Response) {
         const id = req.params['id'];
-        l.debug('[LNABSENCESCONTROLLER] - Get Absence Id : ', id);
         dbLN_Absence.findAbsenceById(id)
             .then(absence => res.status(200).json({ absence }))
             .catch(err => res.status(400).send({ message: err.message }))
@@ -71,8 +65,6 @@ export class absenceController {
 
     async bulkCreateAbsence(req: Request, res: Response) {
         const bulk = req.body;
-        l.debug('[LNABSENCESCONTROLLER] - Bulk Create Absences');
-        //        dbLN_Absence.createBulkAbsences()    }
 
         // Clear the people and the LN_absence table !!!
 
@@ -99,7 +91,6 @@ export class absenceController {
 
             if (errors.length > 0) {
                 res.status(400).json(errors);
-                l.error('[LNABSENCESCONTROLLER] - Bulk Create Absences -: Aborted');
                 break;
             } else {
 
@@ -180,77 +171,6 @@ export class absenceController {
             .then(codes => res.status(200).json({ codes }))
             .catch(err => res.status(400).send(err.message))
     }
-
-    /*    
-            async getAbsence(req: Request, res: Response) {
-                if (!db.dbConnected) res.sendStatus(500);
-                l.debug("[LNABSENCECONTROLLER] - looking for current absence (id): ", req["absenceId"]);
-                const absence = await dbLN_Absence.findAbsenceById(req["absenceId"]);
-        
-                if (absence) {
-                    res.status(200).json({ absence: absence });
-                } else {
-                    res.sendStatus(204);
-                }
-            }
-        
-            async getAbsencesForPeople(req: Request, res: Response) {
-                if (!db.dbConnected) res.sendStatus(500);
-                const id = req.query['people_id'];
-                l.debug("[LNABSENCECONTROLLER] - looking absences for current people (id): ", id);
-                await LN_Absence.find({ people_id: id }, (err, docs) => {
-                    if (!err)
-                        res.status(200).json({ absences: docs })
-                    else
-                        res.status(204)
-                })
-            }
-        
-            async getAbsencesForTGI(req: Request, res: Response) {
-                if (!db.dbConnected) res.sendStatus(500);
-                const id = req.query['tgi'];
-                l.debug("[LNABSENCECONTROLLER] - looking absences for current people (id): ", id);
-                await LN_Absence.find({ tgi: id }, (err, docs) => {
-                    if (!err)
-                        res.status(200).json({ absences: docs })
-                    else
-                        res.status(204)
-                })
-            }
-        
-            async getAbsenceById(req: Request, res: Response) {
-                if (!db.dbConnected) res.sendStatus(500);
-                const id = req.params['id'];
-                l.debug("[LNABSENCECONTROLLER] - looking for absenceId: ", id);
-                const absence = await dbLN_Absence.findAbsenceById(id);
-                if (absence) {
-                    res.status(200).json({ absence: absence });
-                } else {
-                    res.sendStatus(204);
-                }
-            }
-        
-        
-            async deleteAbsence(req: Request, res: Response) {
-                if (!db.dbConnected) res.sendStatus(500);
-                l.debug('[LNABSENCECONTROLLER] - Request for delete absenceId:', req.params.id);
-                const user = await dbLN_Absence.deleteAbsence(req.params.id)
-                    .catch(err => res.sendStatus(500));
-                res.sendStatus(201);
-            }
-        }
-        
-        //---------------------------------------------------------------------------------------
-        
-        async function createAbs(res: Response, data) {
-            try {
-                const absence = await dbLN_Absence.createAbsence(data);
-                res.status(200).json({ absence: absence })
-            } catch {
-                res.status(500).json({ error: 'Absence already exist' })
-            }
-        
-             */
 }
 
 
