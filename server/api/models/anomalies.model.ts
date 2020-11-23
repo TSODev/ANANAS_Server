@@ -7,6 +7,7 @@ declare enum type_etat {
 
 export interface IAnomalie {
     anomalie_id: number,
+    fingerprint: string,
     people_id: number,
     anomalie_from: string,
     etat: number,
@@ -23,6 +24,8 @@ export interface IAnomalie {
 export interface IAnomalie_View {
     anomalie_id: number,
     people_id: number,
+    fingerprint: string,
+    anomalie_from: string,
     from: string,
     etat: number,
     hra_id: number,

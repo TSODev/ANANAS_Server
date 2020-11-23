@@ -1,13 +1,14 @@
 
 
 DROP VIEW IF EXISTS "anoview";
-CREATE TABLE "anoview" ("anomalie_id" integer,"people_id" integer, "from" character varying, "etat" integer, "hra_id" integer, "hracode" character varying,"ln_id" integer, "lncode" character varying, "message" character varying, "debut" date, "commentaire" character varying,source integer,  "fullname" character varying, "tgi" character varying, "matricule" integer);
+CREATE TABLE "anoview" ("anomalie_id" integer,"people_id" integer, "fingerprint" character, "from" character varying, "etat" integer, "hra_id" integer, "hracode" character varying,"ln_id" integer, "lncode" character varying, "message" character varying, "debut" date, "commentaire" character varying,source integer,  "fullname" character varying, "tgi" character varying, "matricule" integer);
 
 
 DROP TABLE IF EXISTS "anoview";
 CREATE VIEW "anoview" AS SELECT 
 anomalies.anomalie_id,
 anomalies.people_id,
+anomalies.fingerprint,
 anomalie_from,
 anomalies.etat,
 anomalies.hra_id,

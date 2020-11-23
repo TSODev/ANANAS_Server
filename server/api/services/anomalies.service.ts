@@ -13,6 +13,7 @@ import { dbLN_Absence } from './LN_absence.service';
 import { IHRA_Absence } from '../models/HRA_absences.model';
 import { ILN_Absence } from '../models/LN_absences.model';
 import P from 'pino';
+import { debug } from 'console';
 
 const { ParameterizedQuery: PQ } = require('pg-promise');
 var moment = require('moment')
@@ -136,141 +137,185 @@ class AnomaliesService {
 
     async anomaliesBulkInsert(bulkArray: IAnomalie[]): Promise<IAnomalie[]> {
         return new promise.Promise((resolve, reject) => {
-            const cs = new pgp.helpers.ColumnSet(['people_id', 'anomalie_from', 'etat', 'hra_id', 'hracode', 'ln_id', 'lncode', 'libelle', 'debut', 'commentaire', 'createddate'], { table: 'anomalies' });
+            if (bulkArray.length > 0) {
+                const cs = new pgp.helpers.ColumnSet(['people_id', 'fingerprint', 'anomalie_from', 'etat', 'hra_id', 'hracode', 'ln_id', 'lncode', 'libelle', 'debut', 'commentaire', 'createddate'], { table: 'anomalies' });
 
-            const Query = pgp.helpers.insert(bulkArray, cs) + ' RETURNING *'
+                const Query = pgp.helpers.insert(bulkArray, cs) + ' RETURNING *'
 
 
-            db.many(Query)
-                .then((anomalies) => {
-                    //                    l.debug('createBulkAbsence result : ', ids, ids.length)
-                    resolve(anomalies)
-                })
-                .catch(err => {
-                    l.error('Service Bulk Create Anomalies : ', err.message)
-                    reject(err)
-                })
+                db.many(Query)
+                    .then((anomalies) => {
+                        resolve(anomalies)
+                    })
+                    .catch(err => {
+                        l.error('Service Bulk Create Anomalies : ', err.message)
+                        reject(err)
+                    })
+            }
+
         })
     }
 
-    analyse(HRA_abs: IHRA_Absence[], LN_abs: ILN_Absence[]): IAnomalie[] {
+    createAnomalieFingerPrint(date: Date, HRA_abs: IHRA_Absence, LN_abs: ILN_Absence) {
+        var fp = ""
+        const fpDate = moment(date).format('x')
+        const fpPeople = HRA_abs.people_id.toString()
+        const fpHRAcode = HRA_abs.code
+        const fpLNcode = LN_abs.code
+        fp = fp.concat(fpDate).concat(fpPeople).concat(fpHRAcode).concat(fpLNcode)
+        return fp
+    }
 
-        const anomaliesArray: IAnomalie[] = []
-        HRA_abs.forEach(hra => {
-            const hra_debut = moment(hra.debut)
-            const hra_fin = moment(hra.fin)
-            for (var date = hra_debut; date.isBefore(hra_fin); date.add(1, 'days')) {
-                const day = moment(date).day()
-                const ln = LN_abs.filter(ln => moment(ln.debut).isSame(moment(date), 'day'))
-                if (ln.length > 0) {
-                    const lncode = ln[0].code
-                    const lnid = ln[0].absence_id
-                    //                    l.debug('FROM HRA hra_id', hra.absence_id, "ln_id", lnid)
-                    //            if (day !== 0 && day !== 6 && JF.some(ferie => date === ferie)) {                           // Does not check on Week End
-                    if (day !== 0 && day !== 6) {                           // Does not check on Week End
-                        const HRAmap = AllHRAmaps(hra.code)
-                        const result = HRAmap.some(c => c.in === lncode)
-                        //                        l.debug('ANALYSE HRA>LN : ', result, lncode, HRAmap)
-                        if (!HRAmap.some(c => c.in === ln[0].code)) {               // Il y a anomalie
-                            anomaliesArray.push({
-                                anomalie_id: null,
-                                anomalie_from: 'HRA',
-                                people_id: hra.people_id,
-                                etat: 1,
-                                hra_id: hra.absence_id,
-                                hracode: hra.code,
-                                ln_id: lnid,
-                                lncode: lncode,
-                                libelle: 'HRA: ' + hra.code + ' ne correspond pas avec LN: ' + lncode,
-                                debut: moment(date).toDate(),
-                                commentaire: '',
-                                createddate: new Date()
-                            })
+    analyse(peopleId: number, HRA_abs: IHRA_Absence[], LN_abs: ILN_Absence[]): Promise<IAnomalie[]> {
+        return new promise.Promise((resolve, reject) => {
+
+            let anomaliesArray: IAnomalie[] = []
+            this.findAnomaliesForPeopleId(peopleId)        // Get anomalies from DB for this people
+                .then(anomalies => {
+                    anomaliesArray = anomalies
+                    //                    l.debug(anomaliesArray.length.toString(), anomaliesArray)
+                    HRA_abs.forEach(hra => {
+                        const hra_debut = moment(hra.debut)
+                        const hra_fin = moment(hra.fin)
+                        for (var date = hra_debut; date.isBefore(hra_fin); date.add(1, 'days')) {
+                            const day = moment(date).day()
+                            const ln = LN_abs.filter(ln => moment(ln.debut).isSame(moment(date), 'day'))
+                            if (ln.length > 0) {
+                                const lncode = ln[0].code
+                                const lnid = ln[0].absence_id
+                                const fingerprint = this.createAnomalieFingerPrint(date, hra, ln[0])
+
+                                const anomalie_exist = anomaliesArray.findIndex(a => a.fingerprint === fingerprint)
+                                //                                l.debug('FP:', anomalie_exist, anomaliesArray[anomalie_exist])
+                                //                    l.debug('FROM HRA hra_id', hra.absence_id, "ln_id", lnid)
+                                //            if (day !== 0 && day !== 6 && JF.some(ferie => date === ferie)) {                           // Does not check on Week End
+                                if (day !== 0 && day !== 6) {                           // Does not check on Week End
+                                    const HRAmap = AllHRAmaps(hra.code)
+                                    const result = HRAmap.some(c => c.in === lncode)
+                                    //                        l.debug('ANALYSE HRA>LN : ', result, lncode, HRAmap)
+                                    if (!HRAmap.some(c => c.in === ln[0].code)) {               // Il y a anomalie
+                                        if (anomalie_exist === -1) {
+                                            //                                            l.debug('push from HRA')                  // pas encore enregistrée
+                                            anomaliesArray.push({
+                                                anomalie_id: null,
+                                                fingerprint: fingerprint,
+                                                anomalie_from: 'HRA',
+                                                people_id: hra.people_id,
+                                                etat: 1,
+                                                hra_id: hra.absence_id,
+                                                hracode: hra.code,
+                                                ln_id: lnid,
+                                                lncode: lncode,
+                                                libelle: 'HRA: ' + hra.code + ' ne correspond pas avec LN: ' + lncode,
+                                                debut: moment(date).toDate(),
+                                                commentaire: '',
+                                                createddate: new Date()
+                                            })
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
+                    })
+                    LN_abs.forEach(ln => {
 
-            }
+                        const date = moment(ln.debut)
+                        const day = moment(date).day()
+                        const hra = HRA_abs.filter(hra => (moment(hra.debut).isSameOrBefore(moment(date), 'day') && moment(hra.fin).isSameOrAfter(moment(date), 'day')))
+                        if (hra.length > 0) {
+                            const hracode = hra[0].code
+                            const hraid = hra[0].absence_id
+                            //                l.debug('FROM LN hra_id', hraid, "ln_id", ln.absence_id)
+                            // Does not check on Week End
+                            if (day !== 0 && day !== 6) {                           // Does not check on Week End
+                                const LNmap = AllLNmaps(ln.code)
+                                const fingerprint = this.createAnomalieFingerPrint(date, hra[0], ln)
+
+                                const result = LNmap.some(c => c.mapped === hracode)
+                                //                        l.debug('ANALYSE HRA>LN : ', result, lncode, HRAmap)
+                                if (!result) {               // Il y a anomalie
+                                    const anomalie_exist = anomaliesArray.findIndex(a => (a.fingerprint === fingerprint))
+                                    if (anomalie_exist === -1) {      // L'anomalie n'existe pas !
+                                        //                                        l.debug('push from LN')
+                                        anomaliesArray.push({
+                                            anomalie_id: null,
+                                            fingerprint: fingerprint,
+                                            anomalie_from: 'LN',
+                                            people_id: ln.people_id,
+                                            etat: 1,
+                                            hra_id: hraid,
+                                            hracode: hracode,
+                                            ln_id: ln.absence_id,
+                                            lncode: ln.code,
+                                            libelle: 'LN: ' + ln.code + ' ne correspond pas avec HRA: ' + hracode,
+                                            debut: moment(date).toDate(),
+                                            commentaire: '',
+                                            createddate: new Date()
+                                        })
+                                    } else {
+                                        anomaliesArray[anomalie_exist].anomalie_from = 'BOTH'
+                                        anomaliesArray[anomalie_exist].libelle = ln.code + ' et ' + hracode + ' ne correspondent pas'
+                                    }
+
+                                }
+                            }
+
+                        }
+                    })
+                    resolve(anomaliesArray)
+                })
+                .catch(error => {
+                    reject(error)
+                    l.debug(error)
+                })
         })
-        LN_abs.forEach(ln => {
-
-            const date = moment(ln.debut)
-            const day = moment(date).day()
-            const hra = HRA_abs.filter(hra => (moment(hra.debut).isSameOrBefore(moment(date), 'day') && moment(hra.fin).isSameOrAfter(moment(date), 'day')))
-            if (hra.length > 0) {
-                const hracode = hra[0].code
-                const hraid = hra[0].absence_id
-                //                l.debug('FROM LN hra_id', hraid, "ln_id", ln.absence_id)
-                //            if (day !== 0 && day !== 6 && JF.some(ferie => date === ferie)) {                           // Does not check on Week End
-                if (day !== 0 && day !== 6) {                           // Does not check on Week End
-                    const LNmap = AllLNmaps(ln.code)
-                    const result = LNmap.some(c => c.mapped === hracode)
-                    //                        l.debug('ANALYSE HRA>LN : ', result, lncode, HRAmap)
-                    if (!result) {               // Il y a anomalie
-                        anomaliesArray.push({
-                            anomalie_id: null,
-                            anomalie_from: 'LN',
-                            people_id: ln.people_id,
-                            etat: 1,
-                            hra_id: hraid,
-                            hracode: hracode,
-                            ln_id: ln.absence_id,
-                            lncode: ln.code,
-                            libelle: 'LN: ' + ln.code + ' ne correspond pas avec HRA: ' + hracode,
-                            debut: moment(date).toDate(),
-                            commentaire: '',
-                            createddate: new Date()
-                        })
-                    }
-                }
-                //                }
-
-            }
-        })
-        return anomaliesArray
     }
 
     async analyseForPeopleId(peopleId: number): Promise<IAnomalie[]> {
         return new promise.Promise((resolve, reject) => {
-            dbHRA_Absence.findAbsencesForPeopleId(peopleId)
-                .then(HRA_abs => {
-                    if (HRA_abs.length > 0) {
-                        dbLN_Absence.findAbsencesForPeopleId(peopleId)
-                            .then(LN_abs => {
-                                if (LN_abs.length > 0) {
-                                    const anomaliesArray = this.analyse(HRA_abs, LN_abs)
-                                    if (anomaliesArray.length !== 0) {
-                                        this.anomaliesBulkInsert(anomaliesArray)
-                                            .then(anomalies => resolve(anomalies))
-                                            .catch(err => {
-                                                //                                                l.debug('Analyse :', err)
-                                                reject(err)
+
+            if (peopleId !== 0) {                          //Test ! CANAL Olivier peopleId === 97
+                dbHRA_Absence.findAbsencesForPeopleId(peopleId)
+                    .then(HRA_abs => {
+                        if (HRA_abs.length > 0) {
+                            dbLN_Absence.findAbsencesForPeopleId(peopleId)
+                                .then(LN_abs => {
+                                    if (LN_abs.length > 0) {
+                                        this.analyse(peopleId, HRA_abs, LN_abs)
+                                            .then(anomalies => {
+                                                //                                                l.debug(peopleId.toString(), " -> ", anomalies)
+                                                resolve(anomalies)
                                             })
                                     }
-                                    else
-                                        resolve([])
-                                }
-                            })
-                            .catch(err => {
-                                //                                l.debug('Find LN Absence :', err)
-                                reject(err)
-                            })
-                    } else {
-                        resolve([])
-                    }
+                                    else {
+                                        resolve(null)     //Absences HRA mais pas d'absence LN
+                                    }
+                                })
+                                .catch(err => {
+                                    //                                l.debug('Find LN Absence :', err)
+                                    reject(err)
+                                })
+                        } else {
+                            resolve(null)             // Pas d'absences HRA pour cette personne
+                        }
 
-                })
-                .catch(err => {
-                    //                    l.debug('Find HRA Absence :', err)
-                    reject(err)
-                })
+                    })
+                    .catch(err => {
+                        reject(new Error(err))
+                    })
+
+            } else {
+                resolve(null)                 // Testing Purpose : case of people_id === 0
+            }
+
+
         })
     }
 
     async bulkAnalyse() {
         return new promise.Promise((resolve, reject) => {
             var AllAnomalies = []
-            dbPeople.findAllPeople()            //TODO : Filter by people coming from LN ?
+            dbPeople.findAllPeopleFromLNSource()
                 .then(people => {
                     var nbPeople = people.length
                     var currentPeople = 0
@@ -278,12 +323,24 @@ class AnomaliesService {
                         if (p.matricule !== 0) {
                             this.analyseForPeopleId(p.people_id)
                                 .then(anomalies => {
-                                    //                                    l.debug('Analyse People :', currentPeople, '/', nbPeople, " ", p.people_id, p.matricule)
-
-                                    AllAnomalies = AllAnomalies.concat(anomalies)
+                                    //                                    l.debug('Analyse People :', currentPeople, '/', nbPeople, " ", p.fullname)
+                                    //                                l.debug('people :', p.fullname, 'anomalies : ', anomalies)
+                                    if (anomalies !== null) {
+                                        AllAnomalies = AllAnomalies.concat(anomalies)
+                                    }
                                     currentPeople += 1
-                                    if (currentPeople === nbPeople)
-                                        resolve(AllAnomalies)
+                                    if (currentPeople === nbPeople) {
+                                        this.clearCollection()
+                                            .then(nothing => {
+                                                //                                                l.debug(AllAnomalies)
+                                                this.anomaliesBulkInsert(AllAnomalies)
+                                                    .then(all => resolve(all))
+                                                    .catch(err => reject(err))
+                                            })
+                                            .catch(err => reject(err))
+
+                                    }
+
                                 })
                                 .catch(err => reject(err))
                         } else currentPeople += 1
@@ -313,20 +370,32 @@ class AnomaliesService {
             const Query = new PQ({
                 text: 'SELECT * FROM anomalies',
             })
-            db.many(Query)
+            db.manyOrNone(Query)
                 .then(anomalies => resolve(anomalies))
                 .catch(err => reject(err))
         })
     }
 
-    async findAnomaliesIdForPeopleId(peopleId: Number): Promise<[string]> {
+    async findAnomaliesIdForPeopleId(peopleId: Number): Promise<IAnomalie[]> {
         return new promise.Promise((resolve, reject) => {
             const Query = new PQ({
                 text: 'SELECT anomalie_id FROM anomalies WHERE people_id = $1',
                 values: peopleId
             })
-            db.many(Query)
-                .then(data => resolve(data))
+            db.manyOrNone(Query)
+                .then(anomalies => resolve(anomalies))
+                .catch(err => reject(err))
+        })
+    }
+
+    async findAnomaliesForPeopleId(peopleId: Number): Promise<IAnomalie[]> {
+        return new promise.Promise((resolve, reject) => {
+            const Query = new PQ({
+                text: 'SELECT * FROM anomalies WHERE people_id = $1',
+                values: peopleId
+            })
+            db.manyOrNone(Query)
+                .then(anomalies => resolve(anomalies))
                 .catch(err => reject(err))
         })
     }
