@@ -16,6 +16,7 @@ import { httpLogger } from './httplogger.middleware';
 import db from './dbPostGresConnect'
 
 import appRouter from '../api/controllers/app/router';
+import { debug } from 'console';
 
 const app = express();
 
@@ -32,21 +33,22 @@ export default class ExpressServer {
     const root = path.normalize(__dirname + '/../..');
     app.set('appPath', root);
 
-    // var envList = process.env.ALLOWED_ORIGINS;
-    // var regexp = /(?<=\[).+?(?=\])/gi;
-    // var matches = envList.match(regexp);
-    // matches.map(allowed => l.debug('Allowed HTTP Request Origin :', allowed));
+    var envList = process.env.ALLOWED_ORIGINS;
+    l.debug(envList)
+    var regexp = /(?<=\[).+?(?=\])/gi;
+    var matches = envList.match(regexp);
+    matches.map(allowed => l.debug('Allowed HTTP Request Origin :', allowed));
 
     const corsOptions = {
-      // origin: function (origin, callback) {
-      //   if (matches.indexOf(origin) !== -1 || !origin) {
-      //     callback(null, true)
-      //   } else {
-      //     l.error(origin, 'is not allowed by CORS');
-      //     callback(new Error('Origin is not allowed by CORS'))
-      //   }
-      // },
-      origin: true,
+      origin: function (origin, callback) {
+        if (matches.indexOf(origin) !== -1 || !origin) {
+          callback(null, true)
+        } else {
+          l.error(origin, 'is not allowed by CORS');
+          callback(new Error('Origin is not allowed by CORS'))
+        }
+      },
+      //origin: true,
       methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
       preflightContinue: false,
       optionsSuccessStatus: 204,

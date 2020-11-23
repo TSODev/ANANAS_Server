@@ -66,6 +66,9 @@ export class userController {
 
     //  if (!db.dbConnected) res.sendStatus(500);
 
+    res.clearCookie("SESSIONID");
+    res.clearCookie("XSRF-TOKEN");
+
     const credentials = req.body;
     //    const user = await dbUser.findUserByEmail(credentials.email);
 
@@ -205,7 +208,7 @@ function loginAndBuildResponse(credentials: any, user: IUser, res: Response) {
           // res.cookie("SESSIONID", sessionToken, { httpOnly: true, sameSite: 'lax', secure: true });
           // res.cookie('XSRF-TOKEN', csrfToken, { sameSite: 'lax' });
           res.cookie("SESSIONID", sessionToken, { httpOnly: true, sameSite: 'none', secure: true });
-          res.cookie('XSRF-TOKEN', csrfToken, { httpOnly: true, sameSite: 'none', secure: true });
+          res.cookie('XSRF-TOKEN', csrfToken, { sameSite: 'none' });
           res.header({ Authorization: `Bearer ` + csrfToken })
           res.status(200).json({
             user_id: user.user_id,

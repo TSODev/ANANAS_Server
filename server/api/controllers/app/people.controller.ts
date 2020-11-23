@@ -22,6 +22,16 @@ export class peopleController {
             })
     }
 
+    async allPeopleFromLNSource(req: Request, res: Response) {
+        dbPeople.findAllPeopleFromLNSource()
+            .then(people => {
+                res.status(200).json({ people: people })
+            })
+            .catch(err => {
+                res.status(400).send({ message: err.message })
+            })
+    }
+
 
     createPeople(req: Request, res: Response): void {
         //        if (!db.dbConnected) res.sendStatus(500);

@@ -244,6 +244,20 @@ class peopleService {
         //        return await People.find();
     }
 
+    async findAllPeopleFromLNSource(): Promise<IPeople[]> {
+        return new promise.Promise((resolve, reject) => {
+            const findAll = new PQ({
+                text: 'SELECT * FROM people WHERE source = $1',
+                values: 1
+            })
+            db.manyOrNone(findAll)
+                .then(peoples => resolve(peoples))
+                .catch(err => reject(err))
+        })
+        //        return await People.find();
+    }
+
+
     async deletePeople(id: string): Promise<IPeople> {
         return new promise.Promise((resolve, reject) => {
             const deletePeople = new PQ({

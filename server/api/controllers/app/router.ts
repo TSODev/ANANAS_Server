@@ -60,6 +60,7 @@ router
     .get('/people/byTGI', checkIfAuthenticated, peopleController.getPeopleByTGI)                      // Get user email address from SESSIONID cookie
     .get('/people/:id', checkIfAuthenticated, peopleController.getPeopleById)
     .get('/allpeople', checkIfAuthenticated, peopleController.allPeople)
+    .get('/allLNpeople', checkIfAuthenticated, peopleController.allPeopleFromLNSource)
     .delete('/people/:id', checkIfAuthenticated,
         _.partial(checkIfAuthorized, (['ADMIN']))
         , peopleController.deletePeople)

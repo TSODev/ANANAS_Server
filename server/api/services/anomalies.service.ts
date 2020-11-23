@@ -270,7 +270,7 @@ class AnomaliesService {
     async bulkAnalyse() {
         return new promise.Promise((resolve, reject) => {
             var AllAnomalies = []
-            dbPeople.findAllPeople()
+            dbPeople.findAllPeople()            //TODO : Filter by people coming from LN ?
                 .then(people => {
                     var nbPeople = people.length
                     var currentPeople = 0

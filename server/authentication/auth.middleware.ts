@@ -8,6 +8,6 @@ export function checkIfAuthenticated(req: Request, res: Response, next: NextFunc
         //        l.debug('[CHECKIFAUTHENTICATED] - ', token);
         next();
     } else {
-        res.status(403).send('Utilsateur non authentifié');
+        res.status(403).send('Utilisateur non authentifié');
     }
 }
