@@ -65,8 +65,8 @@ export default class ExpressServer {
 
     app.use(cookieParser(process.env.SESSION_SECRET));
     app.use(retrieveUserIdFromRequest);                 //need cookieParser to retrive userId from cookie    
-    app.use(bodyParser.json({ limit: '10mb' }));
-    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(bodyParser.json({ limit: '50mb' }));
+    app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
     app.use(express.static(`${root}/public`));
 
 

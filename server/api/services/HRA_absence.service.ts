@@ -127,7 +127,7 @@ class HRAAbsenceService {
                     reject(error)
                 }
                 index += 1
-                l.debug(index.toString(), data.length)
+                //                l.debug(index.toString(), data.length)
 
                 HRABulkAbsencesArray.push(
                     {
@@ -136,8 +136,10 @@ class HRAAbsenceService {
                         load_id: loadId,
                         code: element["Code absence"],
                         libelle: element["Libellé absence"],
-                        debut: momentDebut.toDate(),
-                        fin: momentFin.toDate(),
+                        // debut: momentDebut.toDate(),
+                        // fin: momentFin.toDate(),
+                        debut: new Date(momentDebut.local(true).format()),
+                        fin: new Date(momentFin.local(true).format()),
                         identifiant: element["Identifiant"],
                         modele_rep_absence: element["Modèle rép absence"],
                         num_bulletin: element["Numéro de bulletin"],

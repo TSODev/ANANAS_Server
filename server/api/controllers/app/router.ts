@@ -92,6 +92,6 @@ router
     .get('/clearanomalies', checkIfAuthenticated, anomaliesController.clearAnomalies)
     .get('/allanomaliesfromView', checkIfAuthenticated, anomaliesController.getAllFromView)
     .put('/updateanomaliewithetatandcomment', checkIfAuthenticated, anomaliesController.updateAnomalieWithEtatAndComment)
-
+    .delete('/anoamlies/:id', checkIfAuthenticated, anomaliesController.deleteAnomalieByLoadId)
 
 export default router;

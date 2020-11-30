@@ -27,6 +27,14 @@ const HRAmapping = [
     { in: 'RTTE', mapped: 'RTT' },
     { in: '.RTTE', mapped: 'RTA' },
     { in: 'RTTE', mapped: 'RTA' },
+    { in: '.RTTe', mapped: 'RTT' },
+    { in: 'RTTe', mapped: 'RTT' },
+    { in: '.RTTe', mapped: 'RTA' },
+    { in: 'RTTe', mapped: 'RTA' },
+    { in: '.RTTs', mapped: 'RTT' },
+    { in: 'RTTs', mapped: 'RTT' },
+    { in: '.RTTs', mapped: 'RTA' },
+    { in: 'RTTs', mapped: 'RTA' },
     { in: 'CHO', mapped: 'APN' },
     { in: '.CP', mapped: 'CAN' },
     { in: '.CPANC', mapped: 'CAN' },
@@ -39,6 +47,13 @@ const HRAmapping = [
     { in: 'CM', mapped: 'MAL' },
     { in: '.CM', mapped: 'PAT' },
     { in: '.RTTs', mapped: 'RTA' },
+    { in: 'AANP', mapped: 'AEN' },                 // Ajout 28/11
+    { in: '.AANP', mapped: 'AEN' },                 // Ajout 28/11
+    { in: '.CP', mapped: 'CP0' },
+    { in: '.CPANC', mapped: 'CP0' },
+    { in: '.CP', mapped: 'CP0' },
+    { in: 'CP', mapped: 'CP0' },
+    { in: '.CP', mapped: 'CP0' },
 
 ]
 
@@ -177,7 +192,7 @@ class AnomaliesService {
                     HRA_abs.forEach(hra => {
                         const hra_debut = moment(hra.debut)
                         const hra_fin = moment(hra.fin)
-                        for (var date = hra_debut; date.isBefore(hra_fin); date.add(1, 'days')) {
+                        for (var date = hra_debut; date.isSameOrBefore(hra_fin); date.add(1, 'days')) {
                             const day = moment(date).day()
                             const ln = LN_abs.filter(ln => moment(ln.debut).isSame(moment(date), 'day'))
                             if (ln.length > 0) {
@@ -192,7 +207,7 @@ class AnomaliesService {
                                 if (day !== 0 && day !== 6) {                           // Does not check on Week End
                                     const HRAmap = AllHRAmaps(hra.code)
                                     const result = HRAmap.some(c => c.in === lncode)
-                                    //                        l.debug('ANALYSE HRA>LN : ', result, lncode, HRAmap)
+                                    //l.debug('ANALYSE HRA>LN : ', date, result, lncode, HRAmap)
                                     if (!HRAmap.some(c => c.in === ln[0].code)) {               // Il y a anomalie
                                         if (anomalie_exist === -1) {
                                             //                                            l.debug('push from HRA')                  // pas encore enregistrée
@@ -202,7 +217,7 @@ class AnomaliesService {
                                                 anomalie_from: 'HRA',
                                                 people_id: hra.people_id,
                                                 etat: 1,
-                                                hra_id: hra.absence_id,
+                                                hra_id: hra.load_id,
                                                 hracode: hra.code,
                                                 ln_id: lnid,
                                                 lncode: lncode,
@@ -224,15 +239,15 @@ class AnomaliesService {
                         const hra = HRA_abs.filter(hra => (moment(hra.debut).isSameOrBefore(moment(date), 'day') && moment(hra.fin).isSameOrAfter(moment(date), 'day')))
                         if (hra.length > 0) {
                             const hracode = hra[0].code
-                            const hraid = hra[0].absence_id
-                            //                l.debug('FROM LN hra_id', hraid, "ln_id", ln.absence_id)
+                            const hraid = hra[0].load_id
+                            //l.debug('FROM LN hra_id', hraid, "ln_id", ln.absence_id)
                             // Does not check on Week End
                             if (day !== 0 && day !== 6) {                           // Does not check on Week End
                                 const LNmap = AllLNmaps(ln.code)
                                 const fingerprint = this.createAnomalieFingerPrint(date, hra[0], ln)
 
                                 const result = LNmap.some(c => c.mapped === hracode)
-                                //                        l.debug('ANALYSE HRA>LN : ', result, lncode, HRAmap)
+                                //l.debug('ANALYSE LN>HRA : ', date, result, ln.code, hracode)
                                 if (!result) {               // Il y a anomalie
                                     const anomalie_exist = anomaliesArray.findIndex(a => (a.fingerprint === fingerprint))
                                     if (anomalie_exist === -1) {      // L'anomalie n'existe pas !
@@ -404,6 +419,18 @@ class AnomaliesService {
         return new promise.Promise((resolve, reject) => {
             const Query = new PQ({
                 text: 'DELETE FROM anomalies WHERE anomalie_id = $1',
+                values: id
+            })
+            db.one(Query)
+                .then(data => resolve(data))
+                .catch(err => reject(err))
+        })
+    }
+
+    async deleteAnomalieByLoadId(id: string): Promise<IAnomalie> {
+        return new promise.Promise((resolve, reject) => {
+            const Query = new PQ({
+                text: 'DELETE FROM anomalies WHERE hra_id = $1',
                 values: id
             })
             db.one(Query)

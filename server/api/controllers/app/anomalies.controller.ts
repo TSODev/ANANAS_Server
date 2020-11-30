@@ -47,6 +47,13 @@ export class anomalieController {
             .catch((err) => res.status(400).send(err.message))
     }
 
+    async deleteAnomalieByLoadId(req: Request, res: Response) {
+        const id = req.params['id'];
+        dbAnomalies.deleteAnomalieByLoadId(id)
+            .then(() => res.status(200).send('Anomalies deleted'))
+            .catch((err) => res.status(400).send(err.message))
+    }
+
     async getAllFromView(req: Request, res: Response) {
         dbAnomalies.getAllFromView()
             .then((anomalies) => res.status(200).json(anomalies))
