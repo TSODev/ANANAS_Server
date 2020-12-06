@@ -15,11 +15,17 @@ import LN_absenceController from './LN_absence.controller';
 import anomaliesController from './anomalies.controller';
 import databaseController from './database.controller';
 
+import excelController from './excel.controller';
+import { upload } from '../../../common/excel.middleware'
+
 var router = express.Router();
 
 router
     //---TEST
     .get('/test', usercontroller.TestPG)
+    // -- upload Files
+    .post('/LN/uploadfile', checkIfAuthenticated, upload.single('filename'), excelController.uploadLN, LN_absenceController.bulkCreateAbsence)
+    .post('/HRA/uploadfile', checkIfAuthenticated, upload.single('filename'), excelController.uploadLN, HRA_absenceController.bulkCreateAbsence)
     //--- DATABASE Initializtion
     .get('/db/schema', databaseController.readSchema)
     .get('/db/database', databaseController.readDatabase)

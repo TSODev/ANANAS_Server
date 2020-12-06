@@ -18,6 +18,8 @@ import db from './dbPostGresConnect'
 import appRouter from '../api/controllers/app/router';
 import { debug } from 'console';
 
+
+
 const app = express();
 
 let httpServer = null;
@@ -70,9 +72,7 @@ export default class ExpressServer {
     app.use(express.static(`${root}/public`));
 
 
-
     app.use('/api/v1', appRouter);
-
 
   }
 

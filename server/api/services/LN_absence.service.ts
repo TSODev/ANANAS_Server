@@ -125,7 +125,7 @@ class LNAbsenseService {
                         createddate: new Date()
                     })
 
-                    if (people_id === 120) l.debug('BULKINSERT [120]:', absMoment.format('DD MMM YY'))
+                    //                if (people_id === 120) l.debug('BULKINSERT [120]:', absMoment.format('DD MMM YY'))
                 }
             }
 
